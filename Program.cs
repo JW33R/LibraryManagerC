@@ -11,7 +11,7 @@ namespace LibraryManager
 
         static void Main(string[] args)
         {
-            LoadCatalog();
+            ViewItems();
             MenuChoice();
         }
         public static void MenuChoice()
@@ -30,17 +30,16 @@ namespace LibraryManager
                         AddItems();
                         break;
                     case 2:
-                        //ReturnItems();
+                        ReturnItems();
                         break;
                     case 3:
                         ViewItems();
                         break;
                     case 4:
-                        CheckoutItem myInstance = new();
-                        myInstance.TakeItemOut();
+                        CheckingOutAnItem();
                         break;
                     case 5:
-                        //ViewCheckoutReceipt();
+                        ViewCheckoutReceipt();
                         break;
                     case 6:
                         //SaveCheckoutList();
@@ -103,8 +102,8 @@ namespace LibraryManager
             string itemType = Console.ReadLine();
             Console.Write("Enter Daily Late Fee: ");
             decimal dailyLateFee = Convert.ToDecimal(Console.ReadLine());
-            LibraryItem newItem = new(itemID, title, itemType, dailyLateFee);
-            Catalog.Add(newItem);
+            LibraryItem Item = new(itemID, title, itemType, dailyLateFee);
+            Catalog.Add(Item);
             Console.WriteLine("Item added successfully!");
             SaveCatalog();
             PressContinue();
@@ -148,12 +147,77 @@ namespace LibraryManager
                 Catalog.Add(newItem);
                 SaveCatalog();
             }
+        }
+        public static void CheckingOutAnItem()
+        {
             ClearScreen();
-            Console.WriteLine("Available Items:");
-            foreach (LibraryItem item in Catalog)
+            ViewItems();
+            Console.WriteLine("Checkout an Item");
+            Console.WriteLine("----------------");
+            Console.Write("Enter the ID of the item you wish to check out: ");
+            int tempID = Convert.ToInt32(Console.ReadLine());
+            var selectedItem = Catalog.FirstOrDefault(item => item.ItemID == tempID && !item.IsCheckedOut);
+            if (selectedItem != null)
+            {
+                selectedItem.IsCheckedOut = true;
+                CheckoutItem item = new(selectedItem);
+                CheckoutItem.CheckoutItems.Add(item.Item);
+                Console.WriteLine($"You have checked out: {selectedItem.Title}");
+                Console.WriteLine($"Due date is in 3 days.");
+            }
+            else
+            {
+                Console.WriteLine("Item not found or already checked out.");
+            }
+            PressContinue();
+        }
+        public static void ReturnItems()
+        {
+            ClearScreen();
+            CheckedOutItems();
+            Console.WriteLine("Return an Item");
+            Console.WriteLine("--------------");
+            Console.Write("Enter the ID of the item you wish to return: ");
+            int tempID = Convert.ToInt32(Console.ReadLine());
+            var selectedItem = Catalog.FirstOrDefault(item => item.ItemID == tempID && item.IsCheckedOut);
+            if (selectedItem != null)
+            {
+                selectedItem.IsCheckedOut = false;
+                CheckoutItem.CheckoutItems.RemoveAll(i => i.ItemID == tempID);
+                Console.WriteLine($"You have returned: {selectedItem.Title}");
+            }
+            else
+            {
+                Console.WriteLine("Item not found or not checked out.");
+            }
+            PressContinue();
+        }
+        public static void CheckedOutItems()
+        {
+            ClearScreen();
+            Console.WriteLine("Checked Out Items:");
+            foreach (var item in CheckoutItem.CheckoutItems)
             {
                 item.DisplayInfo();
             }
+            PressContinue();
+        }
+        public static void ViewCheckoutReceipt()
+        {
+            ClearScreen();
+            int counter = 0;
+            CheckedOutItems();
+            Console.WriteLine("Checkout Receipt:");
+            decimal totalLateFees = 0;
+            Console.WriteLine("How long have you had the item(s) checked out? (in days)");
+            int tempDays = Convert.ToInt32(Console.ReadLine());
+            CheckoutItem.CheckoutFormat();
+            foreach (var item in CheckoutItem.CheckoutItems)
+            {
+                item.DisplayInfo();
+                counter++;
+            }
+            Console.WriteLine($"Total Late Fees (if returned late): {totalLateFees:C}");
             PressContinue();
         }
     }

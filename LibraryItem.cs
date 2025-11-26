@@ -25,7 +25,7 @@ namespace LibraryManager
         }
         public void DisplayInfo()
         {
-            Console.WriteLine($"ID: {ItemID}, Title: {Title}, Type: {ItemType}, Daily Late Fee: {DailyLateFee}");
+            Console.WriteLine($"ID: {ItemID}, Title: {Title}, Type: {ItemType}, Daily Late Fee: ${DailyLateFee}");
         }
     }
 }
