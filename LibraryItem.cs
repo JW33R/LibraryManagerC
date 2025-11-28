@@ -14,7 +14,8 @@ namespace LibraryManager
         public decimal DailyLateFee { get; set; }
 
         public bool IsCheckedOut { get; set; }
-
+        public decimal ItemLateFee { get; set; }
+        public int DaysLate { get; set; }
         public LibraryItem(int itemID, string title, string itemType, decimal dailyLateFee)
         {
             ItemID = itemID;

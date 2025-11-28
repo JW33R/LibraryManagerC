@@ -42,10 +42,10 @@ namespace LibraryManager
                         ViewCheckoutReceipt();
                         break;
                     case 6:
-                        //SaveCheckoutList();
+                        SaveCheckoutList();
                         break;
                     case 7:
-                        //LoadCheckoutList();
+                        LoadCheckoutList();
                         break;
                     default:
                         Console.WriteLine("Goodbye...");
@@ -205,19 +205,61 @@ namespace LibraryManager
         public static void ViewCheckoutReceipt()
         {
             ClearScreen();
-            int counter = 0;
             CheckedOutItems();
             Console.WriteLine("Checkout Receipt:");
-            decimal totalLateFees = 0;
-            Console.WriteLine("How long have you had the item(s) checked out? (in days)");
-            int tempDays = Convert.ToInt32(Console.ReadLine());
-            CheckoutItem.CheckoutFormat();
             foreach (var item in CheckoutItem.CheckoutItems)
             {
-                item.DisplayInfo();
-                counter++;
+                Console.WriteLine("How long have you had the item checked out for? (in days)");
+                int tempDays = Convert.ToInt32(Console.ReadLine());
+                CheckoutItem.LateFee(tempDays, item);
             }
-            Console.WriteLine($"Total Late Fees (if returned late): {totalLateFees:C}");
+            CheckoutItem.CheckoutFormat();
+            PressContinue();
+        }
+        public static void SaveCheckoutList()
+        {
+            ClearScreen();
+            string FileName = "CheckoutList.csv";
+            File.Delete(FileName);
+            foreach (var item in CheckoutItem.CheckoutItems)
+            {
+                File.AppendAllText(FileName, $"{item.ItemID}, {item.Title}, {item.ItemType}, {item.DailyLateFee}, {item.DaysLate}, {item.ItemLateFee}\n");
+            }
+            Console.WriteLine("Checkout list saved successfully!");
+            PressContinue();
+        }
+        public static void LoadCheckoutList()
+        {
+            ClearScreen();
+            string FileName = "CheckoutList.csv";
+            if (File.Exists(FileName))
+            {
+                string[] lines = File.ReadAllLines(FileName);
+                CheckoutItem.CheckoutItems.Clear();
+                foreach (string line in lines)
+                {
+                    line.Replace(" ", "");
+                    string[] parts = line.Split(',');
+                    int itemID = Convert.ToInt32(parts[0]);
+                    string title = parts[1];
+                    string itemType = parts[2];
+                    decimal dailyLateFee = Convert.ToDecimal(parts[3]);
+                    int daysLate = Convert.ToInt32(parts[4]);
+                    decimal itemLateFee = Convert.ToDecimal(parts[5]);
+                    LibraryItem newItem = new(itemID, title, itemType, dailyLateFee)
+                    {
+                        DaysLate = daysLate,
+                        ItemLateFee = itemLateFee,
+                        IsCheckedOut = true
+                    };
+                    CheckoutItem.CheckoutItems.Add(newItem);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No previous checkout list found.");
+            }
+            Console.WriteLine("Checkout list loaded successfully!");
             PressContinue();
         }
     }
