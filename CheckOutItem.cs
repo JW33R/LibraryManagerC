@@ -9,6 +9,7 @@ namespace LibraryManager
     internal class CheckoutItem
     {
         public static List<LibraryItem> CheckoutItems = new();
+        public static List<CheckoutItem> Checkout = new();
 
         public LibraryItem Item { get; set; }
         public int DueDate { get; set; }
@@ -22,23 +23,24 @@ namespace LibraryManager
         public static void CheckoutFormat()
         {
             Console.WriteLine("------------- Checkout Receipt ------------");
-            Console.WriteLine("ID".PadRight(10) + "Title".PadRight(20) + "Type".PadRight(11) + "Days Late".PadRight(13) + "Fee");
+            Console.WriteLine("ID".PadRight(7) + "Title".PadRight(25) + "Type".PadRight(15) + "Days Late".PadRight(13) + "Fee");
             foreach (var item in CheckoutItems)
             {
-                Console.WriteLine($"{item.ItemID.ToString().PadRight(10)}{item.Title.PadRight(20)}{item.ItemType.PadRight(11)}{item.DaysLate.ToString().PadRight(13)}${item.ItemLateFee}");
+                Console.WriteLine($"{item.ItemID.ToString().PadRight(6)}{item.Title.PadRight(25)}{item.ItemType.PadRight(15)}{item.DaysLate.ToString().PadRight(13)}${item.ItemLateFee}");
             }
             Console.WriteLine($"Total Estimated Late Fees: ${totalLateFees}");
             Console.WriteLine("-------------------------------------------");
             totalLateFees = 0;
         }
-        public static void LateFee(int day, LibraryItem item)
+        public static void LateFee(int day, LibraryItem item, CheckoutItem checkout)
         {
-            if (day >= 3)
+            if (day > checkout.DueDate)
             {
-                item.DaysLate = day - 3;
+                item.DaysLate = day - checkout.DueDate;
                 item.ItemLateFee = item.DailyLateFee * item.DaysLate;
                 totalLateFees += item.ItemLateFee;
             }
+
         }
     }
 }

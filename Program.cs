@@ -11,6 +11,7 @@ namespace LibraryManager
 
         static void Main(string[] args)
         {
+            EnterACode();
             ViewItems();
             MenuChoice();
         }
@@ -18,12 +19,12 @@ namespace LibraryManager
         {
             ClearScreen();
             string tempChoice = "0";
-            while (tempChoice != "9")
+            while (tempChoice != "10")
             {
                 ClearScreen();
                 DisplayMenu();
                 tempChoice = Console.ReadLine();
-                if (int.TryParse(tempChoice, out int choice) && choice >= 1 && choice <= 9)
+                if (int.TryParse(tempChoice, out int choice) && choice >= 1 && choice <= 10)
                 {
                     switch (choice)
                     {
@@ -43,13 +44,16 @@ namespace LibraryManager
                             ViewCheckoutReceipt();
                             break;
                         case 6:
-                            SaveCheckoutList();
+                            SaveCheckoutList("Item saved to Checkout List!");
                             break;
                         case 7:
                             LoadCheckoutList();
                             break;
                         case 8:
                             DeleteCheckoutList();
+                            break;
+                        case 9:
+                            EnterACode();
                             break;
                         default:
                             Console.WriteLine("Goodbye...");
@@ -58,7 +62,7 @@ namespace LibraryManager
                 }
                 else
                 {
-                    Console.WriteLine("Invalid input. Please enter a number between 1 and 9.");
+                    Console.WriteLine("Invalid input. Please enter a number between 1 and 10.");
                     PressContinue();
                 }
             }
@@ -96,7 +100,8 @@ namespace LibraryManager
             Console.WriteLine("6. Save Checkout List to File");
             Console.WriteLine("7. Load Previous Checkout List from File");
             Console.WriteLine("8. Delete Checkout List");
-            Console.WriteLine("9. Exit");
+            Console.WriteLine("9. Switch Accounts");
+            Console.WriteLine("10. Exit");
 
         }
         public static void AddItems()
@@ -151,10 +156,10 @@ namespace LibraryManager
                 PressContinue();
                 return;
             }
-            LibraryItem Item = new(tempID, title, itemType, fee);
+            LibraryItem Item = new(tempID, title.Trim(), itemType.Trim(), fee);
             Catalog.Add(Item);
-            Console.WriteLine("Item added successfully!");
             SaveCatalog();
+            Console.WriteLine("Item added successfully!");
             PressContinue();
         }
         public static void SaveCatalog()
@@ -192,7 +197,7 @@ namespace LibraryManager
             }
             else
             {
-                LibraryItem newItem = new(101, "The Great Gatsby", "Book", 0.25m);
+                LibraryItem newItem = new(101,"The Great Gatsby","Book",0.25m);
                 Catalog.Add(newItem);
                 SaveCatalog();
             }
@@ -217,11 +222,22 @@ namespace LibraryManager
                         return;
                     }
                 }
-                CheckoutItem item = new(selectedItem);
-                CheckoutItem.CheckoutItems.Add(item.Item);
-                Console.WriteLine($"You have checked out: {selectedItem.Title}");
-                Console.WriteLine($"Due date is in 3 days.");
-                
+                if (selectedItem.ItemType.ToUpper().Trim() == "BOOK")
+                {
+                    CheckoutItem newItem = new(selectedItem, 7);
+                    CheckoutItem.Checkout.Add(newItem);
+                    CheckoutItem.CheckoutItems.Add(newItem.Item);
+                    Console.WriteLine($"You have checked out: {selectedItem.Title}");
+                    Console.WriteLine($"Due date is in {newItem.DueDate} days.");
+                }
+                else if (selectedItem.ItemType.ToUpper().Trim() == "DVD")
+                {
+                    CheckoutItem newItem1 = new(selectedItem);
+                    CheckoutItem.Checkout.Add(newItem1);
+                    CheckoutItem.CheckoutItems.Add(newItem1.Item);
+                    Console.WriteLine($"You have checked out: {selectedItem.Title}");
+                    Console.WriteLine($"Due date is in {newItem1.DueDate} days.");
+                }
             }
             else
             {
@@ -243,18 +259,38 @@ namespace LibraryManager
             Console.WriteLine("Return an Item");
             Console.WriteLine("--------------");
             Console.Write("Enter the ID of the item you wish to return: ");
-            int tempID = Convert.ToInt32(Console.ReadLine());
-            var selectedItem = CheckoutItem.CheckoutItems.FirstOrDefault(item => item.ItemID == tempID);
-            if (selectedItem != null && selectedItem.ItemID == tempID)
+            var tempID = Console.ReadLine();
+            if (int.TryParse(tempID, out int id))
             {
-                CheckoutItem.CheckoutItems.RemoveAll(i => i.ItemID == tempID);
-                Console.WriteLine($"You have returned: {selectedItem.Title}");
+                var selectedItem = CheckoutItem.CheckoutItems.FirstOrDefault(item => item.ItemID == id);
+                if (selectedItem != null && selectedItem.ItemID == id)
+                {
+                    CheckoutItem.CheckoutItems.RemoveAll(i => i.ItemID == id);
+                    if (CheckoutItem.CheckoutItems.Count == 0)
+                    {
+                        Console.WriteLine($"You have returned: {selectedItem.Title}");
+                        Console.WriteLine("All items have been returned.");
+                        File.Delete("CheckoutList.csv");
+                        PressContinue();
+                    }
+                    else
+                    {
+                        SaveCheckoutList(($"You have returned: {selectedItem.Title}"));
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Item not found or not checked out.");
+                    PressContinue();
+                }
             }
             else
             {
-                Console.WriteLine("Item not found or not checked out.");
+                Console.WriteLine("That is not a valid ID, exiting function");
+                PressContinue();
+                return;
             }
-            PressContinue();    
+           
         }
         public static void CheckedOutItems()
         {
@@ -275,21 +311,21 @@ namespace LibraryManager
                 PressContinue();
                 return;
             }
-            CheckedOutItems();
-            ClearScreen();
             Console.WriteLine("Checkout Receipt:");
             foreach (var item in CheckoutItem.CheckoutItems)
             {
                 item.DisplayInfo();
                 Console.WriteLine("How long have you had the item checked out for? (in days)");
                 int tempDays = Convert.ToInt32(Console.ReadLine());
-                CheckoutItem.LateFee(tempDays, item);
+                int index = CheckoutItem.CheckoutItems.IndexOf(item);
+                var moreItem = CheckoutItem.Checkout[index];
+                CheckoutItem.LateFee(tempDays, item, moreItem);
                 ClearScreen();
             }
             CheckoutItem.CheckoutFormat();
             PressContinue();
         }
-        public static void SaveCheckoutList()
+        public static void SaveCheckoutList(string endComment)
         {
             if (CheckoutItem.CheckoutItems.Count == 0)
             {
@@ -305,7 +341,7 @@ namespace LibraryManager
             {
                 File.AppendAllText(FileName, $"{item.ItemID}, {item.Title}, {item.ItemType}, {item.DailyLateFee}, {item.DaysLate}, {item.ItemLateFee}\n");
             }
-            Console.WriteLine("Checkout list saved successfully!");
+            Console.WriteLine(endComment);
             PressContinue();
         }
         public static void LoadCheckoutList()
@@ -332,6 +368,7 @@ namespace LibraryManager
                         ItemLateFee = itemLateFee
                     };
                     CheckoutItem item = new(newItem);
+                    CheckoutItem.Checkout.Add(item);
                     CheckoutItem.CheckoutItems.Add(newItem);
                 }
                 Console.WriteLine("Checkout list loaded successfully!");
@@ -359,6 +396,142 @@ namespace LibraryManager
                 PressContinue();
             }
             
+        }
+        public static void DeleteCatalog() 
+        {             
+            ClearScreen();
+            Console.WriteLine("You sure? (1 = Yes. 2 = No.)");
+            var tempChoice = Console.ReadLine();
+            if (int.TryParse(tempChoice, out int choice))
+            {
+                if (choice == 1)
+                {
+                    var fileName = "Catalog.csv";
+                    if (File.Exists(fileName))
+                    {
+                        File.Delete(fileName);
+                        Console.WriteLine("File Deleted Successfully");
+                        PressContinue();
+                    }
+                    else
+                    {
+                        Console.WriteLine("File Does not exist");
+                        PressContinue();
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Thats not an option, exiting function");
+                PressContinue();
+                return;
+            }
+        }
+        public static void DeleteAnEntryInCatalog()
+        {
+            ViewItems();
+            Console.WriteLine("Which Item would you like to delete? (Enter ID)");
+            var tempChoice = Console.ReadLine();
+            if (int.TryParse(tempChoice, out int choice))
+            {
+                var selectedItem = Catalog.FirstOrDefault(item => item.ItemID == choice);
+                if (selectedItem != null && selectedItem.ItemID == choice)
+                {
+                    Catalog.RemoveAll(i => i.ItemID == choice);
+                    SaveCatalog();
+                    Console.WriteLine("Item Deleted Successfully");
+                    PressContinue();
+                }
+                else
+                {
+                    Console.WriteLine("Item not found.");
+                    PressContinue();
+                }
+            }
+            else
+            {
+                Console.WriteLine("That is not a valid ID, exiting function");
+                PressContinue();
+                return;
+            }
+        }
+        public static void EnterACode()
+        {
+            ClearScreen();
+            Console.WriteLine("1. Admin");
+            Console.WriteLine("2. Guest");
+            var tempChoice = Console.ReadLine();
+            if (int.TryParse(tempChoice, out int choice))
+            {
+                if (choice == 1)
+                {
+                    Console.WriteLine("Enter your employee code:");
+                    var tempCode = Console.ReadLine();
+                    if (int.TryParse(tempCode, out int code))
+                    {
+                        if (code == 1234)
+                        {
+                            DisplayAdminMenu();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Not the right code");
+                            PressContinue();
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("That is not a valid option, you're a guest now.");
+                        PressContinue();
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.Write("You are a guest!");
+                    PressContinue();
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine("That is not a valid option, you're a guest now.");
+                PressContinue();
+                return;
+            }
+        }
+        public static void DisplayAdminMenu()
+        {
+            Console.WriteLine("1. Delete the catalog");
+            Console.WriteLine("2. Delete an entry in the catalog");
+            Console.WriteLine("3. Exit");
+            var tempChoice = Console.ReadLine();
+            if (int.TryParse(tempChoice, out int choice))
+            {
+                if (choice == 1)
+                {
+                    DeleteCatalog();
+                }
+                else if (choice == 2)
+                {
+                    DeleteAnEntryInCatalog();
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                Console.WriteLine("That is not a valid option, exiting function");
+                PressContinue();
+                return;
+            }
         }
     }
 }
