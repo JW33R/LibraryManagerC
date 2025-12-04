@@ -20,6 +20,8 @@ namespace LibraryManager
             Item = item;
             DueDate = dueDate;
         }
+        //I used AI to help me figure out a better way to format the checkout receipt. I asked it: What are some methods to format in c#?
+        //It suggested a few other methods along with PadRight which I decided to use because it was easy to understand and implement.
         public static void CheckoutFormat()
         {
             Console.WriteLine("------------- Checkout Receipt ------------");

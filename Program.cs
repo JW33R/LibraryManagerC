@@ -24,6 +24,10 @@ namespace LibraryManager
                 ClearScreen();
                 DisplayMenu();
                 tempChoice = Console.ReadLine();
+                //I used AI to help me understand how TryParse works. I already knew how Parse worked but was wondering how TryParse worked because it looked like it could be useful
+                //for input validation. I asked it: How does TryParse work in C#? It told me that TryParse attempts to convert a string to a specific data type
+                //and returns a bool indicating whether the conversion was successful or not. So basically it will try to convert it and if it doesn't work 
+                //it won't throw an error like parse would. Instead of a bunch of if statements I thought this would be a better and cleaner way.
                 if (int.TryParse(tempChoice, out int choice) && choice >= 1 && choice <= 10)
                 {
                     switch (choice)
@@ -66,7 +70,6 @@ namespace LibraryManager
                     PressContinue();
                 }
             }
-            Environment.Exit(0);
         }
         public static void ViewItems()
         {
@@ -169,7 +172,7 @@ namespace LibraryManager
             File.Delete(FileName);
             foreach (LibraryItem item in Catalog)
             {
-                File.AppendAllText(FileName, $"{item.ItemID}, {item.Title}, {item.ItemType}, {item.DailyLateFee},\n");
+                File.AppendAllText(FileName, $"{item.ItemID},{item.Title},{item.ItemType},{item.DailyLateFee},\n");
 
             }
         }
@@ -210,39 +213,38 @@ namespace LibraryManager
             Console.WriteLine("----------------");
             Console.Write("Enter the ID of the item you wish to check out: ");
             int tempID = Convert.ToInt32(Console.ReadLine());
-            var selectedItem = Catalog.FirstOrDefault(item => item.ItemID == tempID);
-            if (selectedItem != null)
+            foreach (var checkoutItem in CheckoutItem.CheckoutItems)
             {
-                foreach (var checkoutItem in CheckoutItem.CheckoutItems)
+                if (checkoutItem.ItemID == tempID)
                 {
-                    if (checkoutItem.ItemID == tempID)
+                    Console.WriteLine("Item is already checked out.");
+                    PressContinue();
+                    return;
+                }
+            }
+            foreach (var item in Catalog)
+            {
+                if (item.ItemID == tempID)
+                {
+                    if (item.ItemType.ToUpper().Trim() == "BOOK")
                     {
-                        Console.WriteLine("Item is already checked out.");
-                        PressContinue();
-                        return;
+                        CheckoutItem newItem = new(item, 7);
+                        CheckoutItem.Checkout.Add(newItem);
+                        CheckoutItem.CheckoutItems.Add(newItem.Item);
+                        Console.WriteLine($"You have checked out: {item.Title}");
+                        Console.WriteLine($"Due date is in {newItem.DueDate} days.");
+                    }
+                    else if (item.ItemType.ToUpper().Trim() == "DVD")
+                    {
+                        CheckoutItem newItem1 = new(item);
+                        CheckoutItem.Checkout.Add(newItem1);
+                        CheckoutItem.CheckoutItems.Add(newItem1.Item);
+                        Console.WriteLine($"You have checked out: {item.Title}");
+                        Console.WriteLine($"Due date is in {newItem1.DueDate} days.");
                     }
                 }
-                if (selectedItem.ItemType.ToUpper().Trim() == "BOOK")
-                {
-                    CheckoutItem newItem = new(selectedItem, 7);
-                    CheckoutItem.Checkout.Add(newItem);
-                    CheckoutItem.CheckoutItems.Add(newItem.Item);
-                    Console.WriteLine($"You have checked out: {selectedItem.Title}");
-                    Console.WriteLine($"Due date is in {newItem.DueDate} days.");
-                }
-                else if (selectedItem.ItemType.ToUpper().Trim() == "DVD")
-                {
-                    CheckoutItem newItem1 = new(selectedItem);
-                    CheckoutItem.Checkout.Add(newItem1);
-                    CheckoutItem.CheckoutItems.Add(newItem1.Item);
-                    Console.WriteLine($"You have checked out: {selectedItem.Title}");
-                    Console.WriteLine($"Due date is in {newItem1.DueDate} days.");
-                }
             }
-            else
-            {
-                Console.WriteLine("Item not found or already checked out.");
-            }
+            Console.WriteLine("Item checked out successfully!");
             PressContinue();
         }
         public static void ReturnItems()
@@ -262,26 +264,28 @@ namespace LibraryManager
             var tempID = Console.ReadLine();
             if (int.TryParse(tempID, out int id))
             {
-                var selectedItem = CheckoutItem.CheckoutItems.FirstOrDefault(item => item.ItemID == id);
-                if (selectedItem != null && selectedItem.ItemID == id)
+                foreach (var item in CheckoutItem.CheckoutItems)
                 {
-                    CheckoutItem.CheckoutItems.RemoveAll(i => i.ItemID == id);
-                    if (CheckoutItem.CheckoutItems.Count == 0)
+                    if (item.ItemID == id)
                     {
-                        Console.WriteLine($"You have returned: {selectedItem.Title}");
-                        Console.WriteLine("All items have been returned.");
-                        File.Delete("CheckoutList.csv");
-                        PressContinue();
+                        CheckoutItem.CheckoutItems.Remove(item);
+                        if (CheckoutItem.CheckoutItems.Count == 0)
+                        {
+                            Console.WriteLine($"You have returned: {item.Title}");
+                            Console.WriteLine("All items have been returned.");
+                            File.Delete("CheckoutList.csv");
+                            PressContinue();
+                        }
+                        else
+                        {
+                            SaveCheckoutList(($"You have returned: {item.Title}"));
+                        }
                     }
                     else
                     {
-                        SaveCheckoutList(($"You have returned: {selectedItem.Title}"));
+                        Console.WriteLine("Item not found or not checked out.");
+                        PressContinue();
                     }
-                }
-                else
-                {
-                    Console.WriteLine("Item not found or not checked out.");
-                    PressContinue();
                 }
             }
             else
@@ -304,6 +308,7 @@ namespace LibraryManager
         }
         public static void ViewCheckoutReceipt()
         {
+            int counter = 0;
             ClearScreen();
             if (CheckoutItem.CheckoutItems.Count == 0)
             {
@@ -317,10 +322,10 @@ namespace LibraryManager
                 item.DisplayInfo();
                 Console.WriteLine("How long have you had the item checked out for? (in days)");
                 int tempDays = Convert.ToInt32(Console.ReadLine());
-                int index = CheckoutItem.CheckoutItems.IndexOf(item);
-                var moreItem = CheckoutItem.Checkout[index];
+                var moreItem = CheckoutItem.Checkout[counter];
                 CheckoutItem.LateFee(tempDays, item, moreItem);
                 ClearScreen();
+                counter++;
             }
             CheckoutItem.CheckoutFormat();
             PressContinue();
@@ -438,18 +443,20 @@ namespace LibraryManager
             var tempChoice = Console.ReadLine();
             if (int.TryParse(tempChoice, out int choice))
             {
-                var selectedItem = Catalog.FirstOrDefault(item => item.ItemID == choice);
-                if (selectedItem != null && selectedItem.ItemID == choice)
+                foreach (var item in Catalog)
                 {
-                    Catalog.RemoveAll(i => i.ItemID == choice);
-                    SaveCatalog();
-                    Console.WriteLine("Item Deleted Successfully");
-                    PressContinue();
-                }
-                else
-                {
-                    Console.WriteLine("Item not found.");
-                    PressContinue();
+                    if (item.ItemID == choice)
+                    {
+                        Catalog.Remove(item);
+                        SaveCatalog();
+                        Console.WriteLine("Item Deleted Successfully");
+                        PressContinue();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Item not found.");
+                        PressContinue();
+                    }
                 }
             }
             else
