@@ -1,9 +1,4 @@
-﻿using System.Data.Common;
-using System.Diagnostics.Metrics;
-using System.Net.Quic;
-using System.Runtime.InteropServices;
-
-namespace LibraryManager
+﻿namespace LibraryManager
 {
     internal class Program
     {
