@@ -23,7 +23,7 @@ namespace LibraryManager
             Console.WriteLine("ID".PadRight(7) + "Title".PadRight(25) + "Type".PadRight(15) + "Days Late".PadRight(13) + "Fee");
             foreach (var item in CheckoutItems)
             {
-                Console.WriteLine($"{item.ItemID.ToString().PadRight(6)}{item.Title.PadRight(25)}{item.ItemType.PadRight(15)}{item.DaysLate.ToString().PadRight(13)}${item.ItemLateFee}");
+                Console.WriteLine($"{item.ItemID.ToString().PadRight(7)}{item.Title.PadRight(25)}{item.ItemType.PadRight(15)}{item.DaysLate.ToString().PadRight(13)}${item.ItemLateFee}");
             }
             Console.WriteLine($"Total Estimated Late Fees: ${totalLateFees}");
             Console.WriteLine("-------------------------------------------");

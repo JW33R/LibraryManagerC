@@ -207,40 +207,50 @@
             Console.WriteLine("Checkout an Item");
             Console.WriteLine("----------------");
             Console.Write("Enter the ID of the item you wish to check out: ");
-            int tempID = Convert.ToInt32(Console.ReadLine());
-            foreach (var checkoutItem in CheckoutItem.CheckoutItems)
+            var tempID = Console.ReadLine();
+            if (int.TryParse(tempID, out int id)) 
             {
-                if (checkoutItem.ItemID == tempID)
+                foreach (var checkoutItem in CheckoutItem.CheckoutItems)
                 {
-                    Console.WriteLine("Item is already checked out.");
-                    PressContinue();
-                    return;
-                }
-            }
-            foreach (var item in Catalog)
-            {
-                if (item.ItemID == tempID)
-                {
-                    if (item.ItemType.ToUpper().Trim() == "BOOK")
+                    if (checkoutItem.ItemID == id)
                     {
-                        CheckoutItem newItem = new(item, 7);
-                        CheckoutItem.Checkout.Add(newItem);
-                        CheckoutItem.CheckoutItems.Add(newItem.Item);
-                        Console.WriteLine($"You have checked out: {item.Title}");
-                        Console.WriteLine($"Due date is in {newItem.DueDate} days.");
-                    }
-                    else if (item.ItemType.ToUpper().Trim() == "DVD")
-                    {
-                        CheckoutItem newItem1 = new(item);
-                        CheckoutItem.Checkout.Add(newItem1);
-                        CheckoutItem.CheckoutItems.Add(newItem1.Item);
-                        Console.WriteLine($"You have checked out: {item.Title}");
-                        Console.WriteLine($"Due date is in {newItem1.DueDate} days.");
+                        Console.WriteLine("Item is already checked out.");
+                        PressContinue();
+                        return;
                     }
                 }
+                foreach (var item in Catalog)
+                {
+                    if (item.ItemID == id)
+                    {
+                        if (item.ItemType.ToUpper().Trim() == "BOOK")
+                        {
+                            CheckoutItem newItem = new(item, 7);
+                            CheckoutItem.Checkout.Add(newItem);
+                            CheckoutItem.CheckoutItems.Add(newItem.Item);
+                            Console.WriteLine($"You have checked out: {item.Title}");
+                            Console.WriteLine($"Due date is in {newItem.DueDate} days.");
+                        }
+                        else if (item.ItemType.ToUpper().Trim() == "DVD")
+                        {
+                            CheckoutItem newItem1 = new(item);
+                            CheckoutItem.Checkout.Add(newItem1);
+                            CheckoutItem.CheckoutItems.Add(newItem1.Item);
+                            Console.WriteLine($"You have checked out: {item.Title}");
+                            Console.WriteLine($"Due date is in {newItem1.DueDate} days.");
+                        }
+                    }
+                }
+                Console.WriteLine("Item checked out successfully!");
+                PressContinue();
             }
-            Console.WriteLine("Item checked out successfully!");
-            PressContinue();
+            else
+            {
+                Console.WriteLine("That is not a valid ID, exiting function");
+                PressContinue();
+                return;
+            }
+            
         }
         public static void ReturnItems()
         {
@@ -270,6 +280,7 @@
                             Console.WriteLine("All items have been returned.");
                             File.Delete("CheckoutList.csv");
                             PressContinue();
+                            break;
                         }
                         else
                         {
@@ -316,11 +327,20 @@
             {
                 item.DisplayInfo();
                 Console.WriteLine("How long have you had the item checked out for? (in days)");
-                int tempDays = Convert.ToInt32(Console.ReadLine());
-                var moreItem = CheckoutItem.Checkout[counter];
-                CheckoutItem.LateFee(tempDays, item, moreItem);
-                ClearScreen();
-                counter++;
+                var tempDays = Console.ReadLine();
+                if (int.TryParse(tempDays, out int days))
+                {
+                    var moreItem = CheckoutItem.Checkout[counter];
+                    CheckoutItem.LateFee(days, item, moreItem);
+                    ClearScreen();
+                    counter++;
+                }
+                else
+                {
+                    Console.WriteLine("That is not a valid input, exiting function");
+                    PressContinue();
+                    return;
+                }                
             }
             CheckoutItem.CheckoutFormat();
             PressContinue();
