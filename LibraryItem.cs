@@ -17,7 +17,7 @@ namespace LibraryManager
             DailyLateFee = dailyLateFee;
 
         }
-        public void DisplayInfo()
+        public void DisplayInfo()//This function displays the item in LibraryItem
         {
             Console.WriteLine($"ID: {ItemID}, Title: {Title}, Type: {ItemType}, Daily Late Fee: ${DailyLateFee}");
         }
